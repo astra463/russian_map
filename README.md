@@ -50,7 +50,6 @@ while(!iter.done){
 ![Раз](u5kDg.png)
 
 ## Proof of concept
-<br/>
 [Демосайт](https://maxxxpavlov.github.io/russian-map/)
 <br/>
 Вот и все, время:
