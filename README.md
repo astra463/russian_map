@@ -49,9 +49,7 @@ while(!iter.done){
 ![Раз](S5n2P.png)<br>
 ![Раз](u5kDg.png)
 
-## Соберем Proof of concept
-[Открыть демо-версию]
-Создадим HTML документ, добавим JS скрипт и объект.
+## Proof of concept
 <br/>
 [Демосайт](https://maxxxpavlov.github.io/russian-map/)
 <br/>
