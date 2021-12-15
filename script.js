@@ -1,6 +1,5 @@
 window.addEventListener("load", function () {
   const mapObject = document.querySelector("#map");
-  console.log(mapObject);
   const svg = mapObject.contentDocument;
   const states = svg.querySelectorAll(".state");
   states.forEach((state, i) => {
@@ -16,19 +15,16 @@ window.addEventListener("load", function () {
  * @param {string} path 
  */
 function calculateAreaOfPath(path) {
-  console.log(path)
   const iterator = makeTrapezoidIterator(path)
   let area = 0
   let result = iterator.next()
   while (!result.done) {
     const [first, second] = result.value
-    console.log(first, second)
     area += first[1] + second[1] * (second[0] - first[0]) / 2
     result = iterator.next()
   }
   return Math.abs(area)
 }
-
 /**
  * Итератор по трапециям
  * @param {string} path 
@@ -45,11 +41,11 @@ function* makeTrapezoidIterator(path) {
           points.push(point)
         }
           break
-          case 'L': {
-            const point = buffer[1].split(',').map(Number.parseFloat)
-            points.push(point)
-          }
-            break
+        case 'L': {
+          const point = buffer[1].split(',').map(Number.parseFloat)
+          points.push(point)
+        }
+          break
         case 'C': {
           const point = buffer[3].split(',').map(Number.parseFloat)
           points.push(point)
