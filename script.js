@@ -1,69 +1,94 @@
-window.addEventListener("load", function () {
-  const mapObject = document.querySelector("#map");
-  const svg = mapObject.contentDocument;
-  const states = svg.querySelectorAll(".state");
-  states.forEach((state, i) => {
-    state.addEventListener("mouseenter", (event) => {
-      document.querySelector("#region-name").textContent = state.id;
-      document.querySelector("#region-area").textContent = calculateAreaOfPath(state.getAttribute('d').toString()) | 0;
-      state.style.fill = 'red'
-    });
-  });
-});
-/**
- * Подсчёт площади полигона
- * @param {string} path 
- */
-function calculateAreaOfPath(path) {
-  const iterator = makeTrapezoidIterator(path)
-  let area = 0
-  let result = iterator.next()
-  while (!result.done) {
-    const [first, second] = result.value
-    area += first[1] + second[1] * (second[0] - first[0]) / 2
-    result = iterator.next()
-  }
-  return Math.abs(area)
-}
-/**
- * Итератор по трапециям
- * @param {string} path 
- */
-function* makeTrapezoidIterator(path) {
-  const arguments = path.split(' ')
-  let buffer = []
-  const points = []
-  for (const argument of arguments) {
-    if (['M', 'C', 'Z'].includes(argument)) {
-      switch (buffer[0]) {
-        case 'M': {
-          const point = buffer[1].split(',').map(Number.parseFloat)
-          points.push(point)
-        }
-          break
-        case 'L': {
-          const point = buffer[1].split(',').map(Number.parseFloat)
-          points.push(point)
-        }
-          break
-        case 'C': {
-          const point = buffer[3].split(',').map(Number.parseFloat)
-          points.push(point)
-        }
-          break;
-        case 'Z': {
-          const point = points[0]
-          points.push(point)
-        }
-          break;
-      }
-      buffer = []
+const largestRegionsByArea = [
+    {
+      region: 'Красноярский край',
+      population: '2,828,187',
+      area: '2,339,700 км²',
+      historicalFact: 'Красноярский край был образован 7 декабря 1934 года в результате объединения двух территорий: Красноярского края и Танну-Тувинской области. Красноярский край возник в период советского переустройства административно-территориального деления России. Объединение позволило более целенаправленно осуществлять развитие экономики, социальной сферы и инфраструктуры в рамках одного управленческого центра. Непосредственные основатели Красноярского края как административно-территориальной единицы – это советские власти, которые приняли решение о его формировании и структурных изменениях в составе территорий в тот период.'
+    },
+    {
+      region: 'Саха (Якутия) Республика',
+      population: '964,330',
+      area: '3,083,523 км²',
+      historicalFact: 'Республика Саха (Якутия) была образована 27 апреля 1922 года в составе Российской Федерации. Этот регион, занимающий огромную территорию на востоке Сибири, является крупнейшим субъектом России по площади. Формирование Республики Саха (Якутия) произошло в период советских реформ, когда различные территории были объединены для упрощения управления и укрепления единства страны. Республика Саха (Якутия) славится своими уникальными природными явлениями, среди которых выделяется невероятная природная красота, многообразие ландшафтов и уникальные климатические условия. Саха (Якутия) является центром сохранения и продвижения культурного наследия этнических групп, проживающих на этой обширной территории.'
+    },
+    {
+      region: 'Таймырский (Долгано-Ненецкий) автономный округ',
+      population: '39,786',
+      area: '862,100 км²',
+      historicalFact: 'Таймырский автономный округ – один из самых северных регионов, богатый природными ресурсами, а также место проживания малочисленных народов Севера.'
+    },
+    {
+      region: 'Республика Коми',
+      population: '840,873',
+      area: '415,900 км²',
+      historicalFact: 'Республика Коми была образована 5 августа 1921 года. Исторически Коми была заселена финно-угорскими племенами. Этот регион известен своими лесными массивами, богатством природы и сохранением культурного наследия. Коми также является важным центром лесной и деревообрабатывающей промышленности в России. Сегодня этот регион также активно развивает свой туристический потенциал, предлагая уникальные возможности для путешествий и экологического туризма.'
+    },
+    {
+      region: 'Иркутская область',
+      population: '2,402,138',
+      area: '767,900 км²',
+      historicalFact: 'Иркутская область получила статус области в составе РСФСР 20 октября 1930 года. Ее основание связано с историческими событиями Российской империи, начиная с освоения и обустройства Восточной Сибири. Географическое положение области, богатство природных ресурсов, включая уникальное озеро Байкал, и экономическая значимость этого региона привлекали внимание к его территории на протяжении многих столетий. Иркутская область играла важную роль в развитии торговли и обмена культурой между Россией и Азией. Сегодня регион является крупным центром туризма, обладает значительными запасами драгоценных металлов, древесиной и другими природными богатствами.'
+    },
+    {
+      region: 'Ханты-Мансийский автономный округ - Югра',
+      population: '1,601,167',
+      area: '523,100 км²',
+      historicalFact: 'Ханты-Мансийский Автономный Округ - Югра, образованный 10 декабря 1930 года, является одним из крупнейших производителей нефти и природного газа в России. Этот регион, изначально заселенный угро-финскими племенами, вошел в состав Российской империи в XVIII веке. За последние десятилетия рост добычи энергетических ресурсов стал ключевой отраслью экономики Югры, что привлекло внимание инвесторов и специалистов в нефтяной промышленности. Развитие инфраструктуры, образования и здравоохранения в регионе тесно связано с доходами от нефтяной промышленности.'
+    },
+    {
+      region: 'Ямало-Ненецкий автономный округ',
+      population: '541,479',
+      area: '750,300 км²',
+      historicalFact: 'Ямало-Ненецкий Автономный Округ был создан 10 декабря 1930 года. Этот регион издревле был местом проживания коренных народов Севера - ненцев и хантов. Основная экономическая деятельность связана с добычей природного газа, что приносит значительные доходы в бюджет региона. Сохранение и развитие традиционной культуры коренных народов является важной частью исторического и социального аспектов развития Ямала.'
+    },
+    {
+      region: 'Краснодарский край',
+      population: '5,707,223',
+      area: '76,000 км²',
+      historicalFact: 'Краснодарский край известен своими курортами на Черном море и богатством культурного наследия.'
+    },
+    {
+      region: 'Тюменская область',
+      population: '3,655,259',
+      area: '1,435,200 км²',
+      historicalFact: 'Тюменская область – важный центр добычи нефти и газа, а также обладатель обширных природных ресурсов.'
+    },
+    {
+      region: 'Омская область',
+      population: '1,869,860',
+      area: '139,700 км²',
+      historicalFact: 'Омская область располагается на западе Сибири и известна своими культурными достопримечательностями и историей.'
     }
-    buffer.push(argument)
-  }
-  for (let i = 0; i < points.length; i++) {
-    const nextIndex = i + 1 < points.length ? i + 1 : 0
-    yield [points[i], points[nextIndex]]
-  }
-  return points.length + 1
+  ];
+
+const popupTemplate = document.querySelector('#popup__template').content.querySelector('.popup'); 
+const popupContainer = document.querySelector('.place__popup'); 
+const popupButtons = document.querySelectorAll('.open-popup');
+
+function createPopup(popupData, onDelete, num) {
+    const popupElement = popupTemplate.cloneNode(true); 
+    const deleteButton = popupElement.querySelector('.close-popup');
+
+    popupElement.querySelector('.card-title').textContent = popupData[num].region;
+    popupElement.querySelector('.population').textContent = `Население: ${popupData[num].population}`;
+    popupElement.querySelector('.area').textContent = `Площадь (м2): ${popupData[num].area}`;
+    popupElement.querySelector('.historical_fact').textContent = `Интересный факт: ${popupData[num].historicalFact}`;
+
+    deleteButton.addEventListener('click', () => onDelete(popupElement));
+
+    return popupElement;
 }
+
+function deleteCard(card) {
+    card.remove();
+}
+
+popupButtons.forEach(button => {
+  button.addEventListener('click', function(event){
+    const key = event.currentTarget.getAttribute('data-key');
+    popupContainer.appendChild(createPopup(largestRegionsByArea, deleteCard, key));
+    document.querySelector('.popup').classList.add('active');
+  })
+});
+  
+
